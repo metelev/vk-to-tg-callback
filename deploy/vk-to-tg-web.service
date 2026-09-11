@@ -1,0 +1,26 @@
+[Unit]
+Description=VK to Telegram callback receiver
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=vk-to-tg
+Group=vk-to-tg
+WorkingDirectory=/opt/projects/vk-to-tg-callback
+ExecStart=/opt/projects/vk-to-tg-callback/.venv/bin/python -m vk_to_tg run
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=150
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/projects/vk-to-tg-callback/data
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vk-to-tg
+
+[Install]
+WantedBy=multi-user.target
