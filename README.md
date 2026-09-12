@@ -32,6 +32,8 @@ Callback обработчик проверяет числовой ID сообщ�
 - Telegram-бот от [@BotFather](https://t.me/BotFather), добавленный администратором канала с правом публикации;
 - числовой ID канала вида `-100…`.
 
+Если VPS не может напрямую подключиться к Telegram, понадобится локальный HTTP- или SOCKS-прокси. Проект поддерживает адреса вида `socks5h://127.0.0.1:12334`; суффикс `h` передаёт прокси также разрешение DNS-имён.
+
 ## Переменные `.env`
 
 Скопируйте `.env.example` в `.env`. Файл содержит секреты, его права должны быть `600`, его нельзя отправлять в Git.
@@ -42,6 +44,7 @@ Callback обработчик проверяет числовой ID сообщ�
 - `VK_USER_TOKEN` — пользовательский access token администратора с доступом к видео. Он нужен для получения прямого MP4 через `video.get`: официальная схема VK API 5.199 разрешает этот метод только токену типа `user`. Ключ сообщества для этого метода не подходит.
 - `TELEGRAM_BOT_TOKEN` — токен от BotFather.
 - `TELEGRAM_CHAT_ID` — ID Telegram-канала.
+- `TELEGRAM_PROXY_URL` — необязательный адрес локального HTTP/SOCKS-прокси. Оставьте пустым при прямом доступе. Для Hiddify на порту 12334 используйте `socks5h://127.0.0.1:12334`.
 - `CALLBACK_PATH` — путь HTTPS URL. Если меняете его, измените `location` в nginx.
 - `MEDIA_LIMIT_MB` — максимум видео; значение выше 49 автоматически ограничивается 49.
 
@@ -58,6 +61,37 @@ nano .env
 ```
 
 `check` проверяет токен бота, его право публикации, пользовательский токен VK и доступность сообщества. Ничего не публикует.
+
+## Локальный прокси Hiddify
+
+Для сервера, где Telegram недоступен напрямую, можно запустить Hiddify Core как отдельную службу. В репозитории есть `deploy/hiddify-paper.service`: она читает подписку из `/etc/hiddify-paper/subscription.txt` и открывает смешанный HTTP/SOCKS-порт только для локального использования на `12334`. Храните файл подписки вне Git и выдайте его группе `paper-vpn` с правами `640`.
+
+После установки `hiddify-core` создайте системного пользователя и каталоги, затем установите службу:
+
+```bash
+sudo useradd --system --home /var/lib/hiddify-paper --shell /usr/sbin/nologin paper-vpn
+sudo install -d -o paper-vpn -g paper-vpn -m 700 /var/lib/hiddify-paper
+sudo chown root:paper-vpn /etc/hiddify-paper/subscription.txt
+sudo chmod 640 /etc/hiddify-paper/subscription.txt
+sudo cp deploy/hiddify-paper.service /etc/systemd/system/hiddify-paper.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now hiddify-paper.service
+```
+
+Проверьте, что порт слушает только loopback-адрес, и что Telegram отвечает через него:
+
+```bash
+sudo ss -ltnp | grep 12334
+curl --proxy socks5h://127.0.0.1:12334 -I https://api.telegram.org/
+```
+
+Укажите в `.env` `TELEGRAM_PROXY_URL=socks5h://127.0.0.1:12334`. Чтобы основной сервис запускался после прокси, установите systemd drop-in:
+
+```bash
+sudo mkdir -p /etc/systemd/system/vk-to-tg.service.d
+sudo cp deploy/vk-to-tg-proxy.conf /etc/systemd/system/vk-to-tg.service.d/proxy.conf
+sudo systemctl daemon-reload
+```
 
 ## Установка
 
