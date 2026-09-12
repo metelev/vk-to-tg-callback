@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 from pathlib import Path
 import tempfile
 import requests
@@ -78,6 +79,25 @@ class Telegram:
         suffix = ".mp4" if item["type"] == "video" else ".jpg"
         path = Path(directory) / f"media-{index}{suffix}"
         limit = self.media_limit if item["type"] == "video" else min(self.media_limit, 9 * 1024 * 1024)
+        source_path = Path(item["path"]) if item.get("path") else None
+        if source_path is not None:
+            try:
+                length = source_path.stat().st_size
+                if length > limit:
+                    raise TelegramError(f"{item['type']} exceeds upload limit")
+                size = 0
+                with source_path.open("rb") as source, path.open("wb") as target:
+                    while True:
+                        chunk = source.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        size += len(chunk)
+                        if size > limit:
+                            raise TelegramError(f"{item['type']} exceeds upload limit")
+                        target.write(chunk)
+                return path
+            finally:
+                shutil.rmtree(source_path.parent, ignore_errors=True)
         try:
             with self.download_session.get(
                 item["url"], stream=True, timeout=(10, 120)
