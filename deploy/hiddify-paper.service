@@ -1,0 +1,26 @@
+[Unit]
+Description=Local Paper VPN proxy for VK to Telegram
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=paper-vpn
+Group=paper-vpn
+ExecStart=/usr/local/bin/hiddify-core -D /var/lib/hiddify-paper run -c /etc/hiddify-paper/subscription.txt --in-proxy-port 12334 --log warn
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/etc/hiddify-paper/subscription.txt
+ReadWritePaths=/var/lib/hiddify-paper
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hiddify-paper
+
+[Install]
+WantedBy=multi-user.target
