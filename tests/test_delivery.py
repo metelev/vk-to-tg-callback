@@ -45,6 +45,8 @@ class DeliveryTests(unittest.TestCase):
                 "https": "socks5h://127.0.0.1:12334",
             },
         )
+        self.assertIsNot(telegram.download_session, telegram.session)
+        self.assertEqual(telegram.download_session.proxies, {})
 
     def test_utf16_caption_split_preserves_emoji(self):
         from vk_to_tg.telegram import split_utf16
