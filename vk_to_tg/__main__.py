@@ -41,7 +41,10 @@ def main() -> None:
         state.set_status(args.key, "pending" if args.command == "retry" else "done")
         return
     telegram = Telegram(
-        config.telegram_bot_token, config.telegram_chat_id, config.media_limit_mb
+        config.telegram_bot_token,
+        config.telegram_chat_id,
+        config.media_limit_mb,
+        proxy_url=config.telegram_proxy_url,
     )
     vk = VK(config.vk_user_token)
     if args.command == "check":

@@ -36,11 +36,20 @@ def _chunks(text: str, limit: int = 4096) -> list[str]:
 
 
 class Telegram:
-    def __init__(self, token: str, chat_id: str, media_limit_mb: int = 49, session=None):
+    def __init__(
+        self,
+        token: str,
+        chat_id: str,
+        media_limit_mb: int = 49,
+        session=None,
+        proxy_url: str = "",
+    ):
         self.base = f"https://api.telegram.org/bot{token}"
         self.chat_id = chat_id
         self.media_limit = media_limit_mb * 1024 * 1024
         self.session = session or requests.Session()
+        if proxy_url:
+            self.session.proxies.update({"http": proxy_url, "https": proxy_url})
 
     def _post(self, method: str, data: dict, files=None):
         try:

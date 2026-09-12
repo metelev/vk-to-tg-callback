@@ -26,6 +26,7 @@ class Config:
     vk_user_token: str
     telegram_bot_token: str
     telegram_chat_id: str
+    telegram_proxy_url: str = ""
     callback_path: str = "/vk/callback"
     listen_host: str = "127.0.0.1"
     listen_port: int = 8080
@@ -53,6 +54,7 @@ class Config:
             vk_user_token=values["VK_USER_TOKEN"],
             telegram_bot_token=values["TELEGRAM_BOT_TOKEN"],
             telegram_chat_id=values["TELEGRAM_CHAT_ID"],
+            telegram_proxy_url=values.get("TELEGRAM_PROXY_URL", ""),
             callback_path=callback_path,
             listen_host=values.get("LISTEN_HOST", "127.0.0.1"),
             listen_port=int(values.get("LISTEN_PORT", "8080")),
