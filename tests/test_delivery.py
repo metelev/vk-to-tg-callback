@@ -73,8 +73,7 @@ class DeliveryTests(unittest.TestCase):
             tg = Telegram()
             deliver_one(state, state.pending()[0], tg, lambda post: ([{"type": "photo", "url": "x"}], []))
             self.assertEqual(len(tg.calls), 1)
-            self.assertTrue(tg.calls[0][0].startswith("hello"))
-            self.assertIn("https://vk.com/wall-42_7", tg.calls[0][0])
+            self.assertEqual(tg.calls[0][0], "hello")
             self.assertEqual(state.list_jobs()[0]["status"], "done")
 
     def test_lost_remote_result_is_not_retried_automatically(self):
