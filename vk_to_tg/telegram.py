@@ -43,11 +43,15 @@ class Telegram:
         media_limit_mb: int = 49,
         session=None,
         proxy_url: str = "",
+        download_session=None,
     ):
         self.base = f"https://api.telegram.org/bot{token}"
         self.chat_id = chat_id
         self.media_limit = media_limit_mb * 1024 * 1024
         self.session = session or requests.Session()
+        self.download_session = download_session or (
+            session if session is not None else requests.Session()
+        )
         if proxy_url:
             self.session.proxies.update({"http": proxy_url, "https": proxy_url})
 
@@ -75,7 +79,9 @@ class Telegram:
         path = Path(directory) / f"media-{index}{suffix}"
         limit = self.media_limit if item["type"] == "video" else min(self.media_limit, 9 * 1024 * 1024)
         try:
-            with self.session.get(item["url"], stream=True, timeout=(10, 120)) as response:
+            with self.download_session.get(
+                item["url"], stream=True, timeout=(10, 120)
+            ) as response:
                 response.raise_for_status()
                 length = int(response.headers.get("Content-Length", "0"))
                 if length > limit:
