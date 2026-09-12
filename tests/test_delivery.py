@@ -1,9 +1,51 @@
 import tempfile
 import unittest
 import json
+from pathlib import Path
+from unittest import mock
 
 
 class DeliveryTests(unittest.TestCase):
+    def test_config_loads_optional_telegram_proxy(self):
+        from vk_to_tg.config import Config
+
+        with tempfile.TemporaryDirectory() as directory:
+            env_path = Path(directory) / ".env"
+            env_path.write_text(
+                "VK_GROUP_ID=42\n"
+                "VK_CALLBACK_SECRET=secret\n"
+                "VK_CONFIRMATION=confirmation\n"
+                "VK_USER_TOKEN=vk-token\n"
+                "TELEGRAM_BOT_TOKEN=tg-token\n"
+                "TELEGRAM_CHAT_ID=-1001\n"
+                "TELEGRAM_PROXY_URL=socks5h://127.0.0.1:12334\n",
+                encoding="utf-8",
+            )
+            with mock.patch.dict("os.environ", {}, clear=True):
+                config = Config.load(str(env_path))
+
+        self.assertEqual(
+            config.telegram_proxy_url,
+            "socks5h://127.0.0.1:12334",
+        )
+
+    def test_telegram_uses_configured_proxy(self):
+        from vk_to_tg.telegram import Telegram
+
+        telegram = Telegram(
+            "token",
+            "-1001",
+            proxy_url="socks5h://127.0.0.1:12334",
+        )
+
+        self.assertEqual(
+            telegram.session.proxies,
+            {
+                "http": "socks5h://127.0.0.1:12334",
+                "https": "socks5h://127.0.0.1:12334",
+            },
+        )
+
     def test_utf16_caption_split_preserves_emoji(self):
         from vk_to_tg.telegram import split_utf16
 
