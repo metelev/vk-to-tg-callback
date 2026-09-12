@@ -1,4 +1,7 @@
+import sys
+import types
 import unittest
+from unittest import mock
 
 
 class MediaTests(unittest.TestCase):
@@ -33,6 +36,30 @@ class MediaTests(unittest.TestCase):
         media, notes = extract_media(post, VK())
         self.assertEqual(media, [])
         self.assertIn("video-42_9", notes[0])
+
+    def test_video_falls_back_to_ytdlp_when_vk_has_no_file(self):
+        from vk_to_tg.vk import VK
+
+        class FakeYoutubeDL:
+            def __init__(self, options):
+                self.options = options
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return None
+            def extract_info(self, url, download=False):
+                self.url = url
+                return {"formats": [
+                    {"format_id": "18", "url": "https://cdn.test/video.mp4", "ext": "mp4",
+                     "height": 720, "vcodec": "avc1", "acodec": "mp4a"},
+                ]}
+
+        fake_module = types.SimpleNamespace(YoutubeDL=FakeYoutubeDL)
+        with mock.patch.dict(sys.modules, {"yt_dlp": fake_module}):
+            result = VK("token").resolve_video({"owner_id": -42, "id": 9})
+
+        self.assertEqual(result["url"], "https://cdn.test/video.mp4")
+        self.assertEqual(result["height"], 720)
 
 
 if __name__ == "__main__":
