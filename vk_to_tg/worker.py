@@ -8,8 +8,7 @@ log = logging.getLogger("vk_to_tg.worker")
 
 def _post_text(post: dict, notes: list[str]) -> str:
     text = post.get("text", "").strip()
-    source = f"https://vk.com/wall{post['owner_id']}_{post['id']}"
-    parts = [part for part in [text, *notes, "Источник: " + source] if part]
+    parts = [part for part in [text, *notes] if part]
     return "\n\n".join(parts)
 
 
