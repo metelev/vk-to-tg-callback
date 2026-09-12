@@ -1,3 +1,7 @@
+import shutil
+import tempfile
+from pathlib import Path
+
 import requests
 
 
@@ -82,13 +86,40 @@ class VK:
             if height and height > 720:
                 continue
             formats.append(item)
-        if not formats:
-            return None
-        chosen = max(formats, key=lambda item: (item.get("height") or 0, item.get("tbr") or 0))
-        return {
-            "url": chosen["url"],
-            "size": chosen.get("filesize") or chosen.get("filesize_approx"),
-            "width": chosen.get("width"),
-            "height": chosen.get("height"),
-            "duration": info.get("duration"),
+        if formats:
+            chosen = max(formats, key=lambda item: (item.get("height") or 0, item.get("tbr") or 0))
+            return {
+                "url": chosen["url"],
+                "size": chosen.get("filesize") or chosen.get("filesize_approx"),
+                "width": chosen.get("width"),
+                "height": chosen.get("height"),
+                "duration": info.get("duration"),
+            }
+
+        directory = Path(tempfile.mkdtemp(prefix="vk-to-tg-video-"))
+        output = directory / "video.%(ext)s"
+        download_options = {
+            "quiet": True,
+            "no_warnings": True,
+            "noplaylist": True,
+            "format": "bestvideo[height<=720]+bestaudio/best[height<=720]",
+            "merge_output_format": "mp4",
+            "outtmpl": str(output),
         }
+        try:
+            with YoutubeDL(download_options) as downloader:
+                downloaded = downloader.extract_info(url, download=True)
+            candidates = sorted(directory.glob("video.*"))
+            merged = next((path for path in candidates if path.suffix.lower() == ".mp4"), None)
+            if merged is None:
+                raise RuntimeError("yt-dlp did not produce an MP4")
+            return {
+                "path": str(merged),
+                "size": merged.stat().st_size,
+                "width": downloaded.get("width"),
+                "height": downloaded.get("height"),
+                "duration": downloaded.get("duration"),
+            }
+        except Exception:
+            shutil.rmtree(directory, ignore_errors=True)
+            return None
