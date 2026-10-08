@@ -1,0 +1,7 @@
+[Unit]
+Description=Check Telegram connectivity through Paper VPN
+After=network-online.target hiddify-paper.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/check-vk-tg-proxy

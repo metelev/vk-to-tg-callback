@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodic Telegram proxy health check
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
